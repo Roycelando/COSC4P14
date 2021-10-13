@@ -1,4 +1,6 @@
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,8 +13,13 @@ import java.util.Scanner;
 public class Client {
 
 	public static void main(String[] args) throws UnknownHostException, IOException {
+		int fileNameLength;
+		String fileName;
+		int contentLength;
 		int port;
-		byte[] chunck = new byte[2024];
+		byte[] contentBytes = null;
+		byte[] fileNameBytes = null;
+
 		if (args.length < 1) {
 			port = 4000;
 		} else {
@@ -20,15 +27,29 @@ public class Client {
 		}
 
 		try (Socket s = new Socket("localhost", port)) {
-			PrintWriter output = new PrintWriter(s.getOutputStream(), true);
-			InputStream is = s.getInputStream();
-			FileOutputStream fout = new FileOutputStream("Test.pdf");
-			is.read(chunck, 0, chunck.length);
-			fout.write(chunck, 0, chunck.length);
-			fout.close();
+			DataInputStream input = new DataInputStream(s.getInputStream());
+			fileNameLength = input.readInt();
+
+			if (fileNameLength > 0) {
+				fileNameBytes = new byte[fileNameLength];
+				input.readFully(fileNameBytes, 0, fileNameBytes.length);
+				fileName = new String(fileNameBytes);
+
+				contentLength = input.readInt();
+				
+				if (contentLength > 0) {
+					contentBytes = new byte[contentLength];
+					input.readFully(contentBytes, 0, contentBytes.length);
+				}
+				FileOutputStream fout = new FileOutputStream(new File(fileName));
+				fout.write(contentBytes);
+				fout.close();
+			}
+			
+		
 
 		}
-		System.exit(0);
+
 	}
 
 }

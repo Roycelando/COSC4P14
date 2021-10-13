@@ -18,7 +18,7 @@ public class Server {
 
 			try (ServerSocket serverSocket = new ServerSocket(port)) {
 				Socket socket = serverSocket.accept();
-				new FileSystem(socket);
+				new FileSystem(socket).start();
 				System.out.println("Client connected!");
 
 			} catch (IOException ex) {
