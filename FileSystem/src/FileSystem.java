@@ -45,20 +45,20 @@ public class FileSystem extends Thread {
 
 	public void run() {
 		try {
-			System.out.println("File system is running....");
+			System.out.println("[System]: File system is running....");
 			int option;
-			int value = (int)brInput.read();
-			isStudent = value == 1 ? true : false;
-			System.out.println("value:" + value);
-			while (stillUsing) {
-				
+			int role = (int)brInput.read();
+			isStudent = role == 1 ? true : false;
+			
+			while (stillUsing) {			
 				option = brInput.read();
-				System.out.println("option:" + option);
-				sendMenu(option);
-				
+				if((isStudent && option == 2) || (!isStudent && option == 3)) {
+					break;
+				}
+				sendMenu(option);	
 			}
 
-			System.out.println("done");
+			System.out.println("[System]: File system closing..");
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 			e.getStackTrace();
@@ -66,6 +66,7 @@ public class FileSystem extends Thread {
 	}
 
 	public void uploadFile(int num) {
+		
 		try {
 			if (num >= 0 && num < listOfFiles.length) {
 				fileName = listOfFiles[num].getName();
@@ -74,7 +75,7 @@ public class FileSystem extends Thread {
 				File file = new File("Library/" + fileName);
 				fileIn = new FileInputStream(file);
 				fileName = file.getName();
-				System.out.println("trying to send: " + fileName);
+				System.out.println("[System]: Sending -> " + fileName);
 
 				// we send the file name
 				byte[] fileNameBytes = fileName.getBytes();
@@ -89,16 +90,17 @@ public class FileSystem extends Thread {
 
 			}
 		} catch (FileNotFoundException fnf) {
-			System.out.println("File not found");
+			System.out.println("[System]: File not found");
 		} catch (IOException e) {
-			System.out.println("IO exception");
+			System.out.println("[System]: IO exception");
 			e.printStackTrace();
 		}
-
+		
 	}
 
 	public void downloadFile(DataInputStream input) {
 		try {
+			
 			int fileNameLength = input.readInt();
 			int contentLength;
 			byte[] contentBytes = null;
@@ -118,7 +120,7 @@ public class FileSystem extends Thread {
 				FileOutputStream fout = new FileOutputStream(new File(fileName));
 				fout.write(contentBytes);
 				fout.close();
-				System.out.println("File ready to use.....");
+				
 			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
@@ -139,7 +141,9 @@ public class FileSystem extends Thread {
 			int val;
 			try {
 				val = brInput.read();
+				System.out.println("[System]: Trying to upload a file...");
 				uploadFile(val);
+				System.out.println("[System]: Done uploading file...");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -147,9 +151,9 @@ public class FileSystem extends Thread {
 			
 			
 		} else if (isStudent == false && option == 2) {
-			System.out.println("Receiving a file...");
+			System.out.println("[System]: Receiving a file...");
 			downloadFile(input);
-			System.out.println("Done downloading...");
+			System.out.println("[System]: Done downloading...");
 		}
 
 	}

@@ -16,15 +16,15 @@ public class Server {
 			port = Integer.parseInt(args[0]);
 		}
 		while (true) {
-			System.out.println("Waiting for client to connect...");
+			System.out.println("[Server]: Waiting for client to connect...");
 
 			try (ServerSocket serverSocket = new ServerSocket(port)) {
 				Socket socket = serverSocket.accept();
 				new FileSystem(socket).start();
-				System.out.println("Client connected!");
+				System.out.println("[Server]: Client connected!");
 
 			} catch (IOException ex) {
-				System.out.println("Server exception: " + ex.getMessage());
+				System.out.println("[Server]: exception: " + ex.getMessage());
 				ex.printStackTrace();
 			}
 		}

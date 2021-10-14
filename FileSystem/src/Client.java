@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 import javax.swing.JFileChooser;
@@ -35,8 +36,11 @@ public class Client {
 	public Client(int port, Boolean isStudent) throws InterruptedException {
 		this.port = port;
 		this.isStudent = isStudent;
-
-		try (Socket s = new Socket("localhost", port)) {
+		System.out.println("[Client]: What's the IP of the server?\n[Client]: Type localhost for localhost, or the IP.");
+		System.out.print("\t:");
+		Scanner scan = new Scanner(System.in);
+		String ip = scan.next();
+		try (Socket s = new Socket(ip, port)) {
 			out = new DataOutputStream(s.getOutputStream());
 			input = new DataInputStream(s.getInputStream());
 			brInput = new BufferedReader(new InputStreamReader(s.getInputStream()));
@@ -45,74 +49,80 @@ public class Client {
 			pwOutput.write(value);
 			pwOutput.flush();
 			while (true) {
-				
+
 				getMenu(brInput);
 			}
 		} catch (IOException e) {
-
+			System.out.println("[Client]: There seems to be a problem connecting...");
 		}
 
 	}
 
 	public void getMenu(BufferedReader brInput) throws InterruptedException {
-		Scanner scan = new Scanner(System.in);
-		String msg;
-		if (isStudent) {
-			int option = 0;
+		try {
+			Scanner scan = new Scanner(System.in);
+			String msg;
+			if (isStudent) {
 
-			System.out.println("1.Download a file 2. Exit");
-			option = scan.nextInt();
-			pwOutput.write(option);
-			pwOutput.flush();
-	
-			switch (option) {
-			case 1: {
-				
-				downloadList(brInput);
-				System.out.print(": ");
-				pwOutput.write(scan.nextInt());
-				pwOutput.flush();
-				downloadFile(input);
-				break;
-			}
-			case 2: {
-				System.out.println("Bye! Have a nice day...");
-				System.exit(0);
-			}
-			}
-		} else {
-			System.out.println("yo");
-			int option = 0;
-			while (option != 1 && option != 2 && option != 3) {
-				System.out.println("1.Download a file 2. Upload a file 3. Exit");
+				int option = 0;
+
+				System.out.println("1.Download a file 2. Exit");
 				option = scan.nextInt();
 				pwOutput.write(option);
 				pwOutput.flush();
-			}
 
-			switch (option) {
+				switch (option) {
 				case 1: {
-					
+
 					downloadList(brInput);
 					System.out.print(": ");
 					pwOutput.write(scan.nextInt());
 					pwOutput.flush();
 					downloadFile(input);
 					break;
-					
 				}
 				case 2: {
-					System.out.println("yop");
-					uploadFile();
-					System.out.println("Uploading File...");
-					break;
-				}
-				case 3: {
 					System.out.println("Bye! Have a nice day...");
 					System.exit(0);
 				}
-			}
+				}
 
+			} else {
+				int option = 0;
+				while (option != 1 && option != 2 && option != 3) {
+
+					System.out.println("1.Download a file 2.Upload a file 3. Exit");
+					option = scan.nextInt();
+					pwOutput.write(option);
+					pwOutput.flush();
+				}
+
+				switch (option) {
+				case 1: {
+					downloadList(brInput);
+					System.out.print("\t: ");
+					pwOutput.write(scan.nextInt());
+					pwOutput.flush();
+					System.out.println("[Client]: Downloading file...");
+					downloadFile(input);
+					System.out.println("[Client]: Download complete...");
+					break;
+				}
+				case 2: {
+					System.out.println("[Client]: Uploading File...");
+					uploadFile();
+					System.out.println("[Clinet]: Done uploading File...");
+					break;
+				}
+				case 3: {
+					System.out.println("[Client]: Bye! Have a nice day...");
+					System.exit(0);
+				}
+				}
+
+			}
+		} catch (InputMismatchException e) {
+			System.out.println("Give me a the correct inbut");
 		}
 	}
 
@@ -160,15 +170,13 @@ public class Client {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
-
 	}
 
 	public void uploadFile() {
 		try {
-		
+
 			// get the file we want to send
 			JFileChooser jfc = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
-		
 
 			int returnValue = jfc.showOpenDialog(null);
 
@@ -176,11 +184,11 @@ public class Client {
 				File selectedFile = jfc.getSelectedFile();
 				System.out.println(selectedFile.getAbsolutePath());
 			}
-			
+
 			File file = jfc.getSelectedFile();
 			try (FileInputStream fileIn = new FileInputStream(file)) {
 				fileName = file.getName();
-				System.out.println("trying to send: " + fileName);
+				System.out.println("[Client]: Sending: " + fileName + " ...");
 
 				// we send the file name
 				byte[] fileNameBytes = fileName.getBytes();
@@ -192,7 +200,7 @@ public class Client {
 
 				out.writeInt(sendBytes.length);
 				out.write(sendBytes);
-				System.out.println("flag1");
+
 			}
 
 		} catch (FileNotFoundException fnf) {
@@ -210,49 +218,51 @@ public class Client {
 
 	public static void main(String[] args) throws UnknownHostException, IOException, InterruptedException {
 		int port = 0;
+		try {
+			if (args.length < 1) {
+				port = 4000;
+				System.out.println("Type 0 if you are a Professor and 1 if you are a Student. ");
+				System.out.print("-> ");
+				Scanner scan = new Scanner(System.in);
+				int option = scan.nextInt();
+				if (option == 0) {
 
-		if (args.length < 1) {
-			port = 4000;
-			System.out.println("Type 0 if you are a Professor and 1 if you are a Student. ");
-			System.out.print("-> ");
-			Scanner scan = new Scanner(System.in);
-			int option = scan.nextInt();
-			if (option == 0) {
+					System.out.println("Welcome professor.");
+					new Client(port, false);
+				} else if (option == 1) {
+					System.out.println("Welcome you neophyte.");
+					new Client(port, true);
+				}
 
-				System.out.println("Welcome professor.");
-				new Client(port, false);
-			} else if (option == 1) {
-				System.out.println("Welcome you neophyte.");
-				new Client(port, true);
+				else {
+					System.out.println("Sorry you didn't follow the protocol, add 1 Student and 0 for Professor.");
+					System.exit(0);
+				}
+			} else {
+				port = Integer.parseInt(args[0]);
+				if (args.length < 2) {
+					System.out.println("Sorry you didn't follow the protocol, add 1 Student and 0 for Professor.");
+					System.exit(0);
+				}
+				int option = Integer.parseInt(args[1]);
+
+				if (option == 0) {
+
+					System.out.println("Welcome professor.");
+					new Client(port, false);
+				} else if (option == 1) {
+					System.out.println("Welcome you neophyte.");
+					new Client(port, true);
+				}
+
+				else {
+					System.out.println("Sorry you didn't follow the protocol, add 1 Student and 0 for Professor.");
+					System.exit(0);
+				}
 			}
-
-			else {
-				System.out.println("Sorry you didn't follow the protocol, add 1 Student and 0 for Professor.");
-				System.exit(0);
-			}
-		} else {
-			port = Integer.parseInt(args[0]);
-			if (args.length < 2) {
-				System.out.println("Sorry you didn't follow the protocol, add 1 Student and 0 for Professor.");
-				System.exit(0);
-			}
-			int option = Integer.parseInt(args[1]);
-
-			if (option == 0) {
-
-				System.out.println("Welcome professor.");
-				new Client(port, false);
-			} else if (option == 1) {
-				System.out.println("Welcome you neophyte.");
-				new Client(port, true);
-			}
-
-			else {
-				System.out.println("Sorry you didn't follow the protocol, add 1 Student and 0 for Professor.");
-				System.exit(0);
-			}
+		} catch (InputMismatchException e) {
+			System.out.println("Give me the correct value");
 		}
-
 	}
 
 	public void whoAreYou(String option) {
