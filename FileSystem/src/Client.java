@@ -14,6 +14,9 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileSystemView;
+
 public class Client {
 	int fileNameLength;
 	String fileName;
@@ -27,6 +30,7 @@ public class Client {
 	DataOutputStream out;
 	PrintWriter pwOutput;
 	BufferedReader brInput;
+	JFileChooser fc;
 
 	public Client(int port, Boolean isStudent) throws InterruptedException {
 		this.port = port;
@@ -37,10 +41,11 @@ public class Client {
 			input = new DataInputStream(s.getInputStream());
 			brInput = new BufferedReader(new InputStreamReader(s.getInputStream()));
 			pwOutput = new PrintWriter(s.getOutputStream(), true);
+			int value = isStudent == true ? 1 : 0;
+			pwOutput.write(value);
+			pwOutput.flush();
 			while (true) {
-				int value = isStudent == true ? 1 : 0;
-				pwOutput.write(value);
-				pwOutput.flush();
+				
 				getMenu(brInput);
 			}
 		} catch (IOException e) {
@@ -62,7 +67,7 @@ public class Client {
 	
 			switch (option) {
 			case 1: {
-				System.out.println("Hello");
+				
 				downloadList(brInput);
 				System.out.print(": ");
 				pwOutput.write(scan.nextInt());
@@ -76,15 +81,18 @@ public class Client {
 			}
 			}
 		} else {
+			System.out.println("yo");
 			int option = 0;
-			while (option != 1 || option != 2 || option != 3) {
+			while (option != 1 && option != 2 && option != 3) {
 				System.out.println("1.Download a file 2. Upload a file 3. Exit");
 				option = scan.nextInt();
+				pwOutput.write(option);
+				pwOutput.flush();
 			}
 
 			switch (option) {
 				case 1: {
-					System.out.println("Hello");
+					
 					downloadList(brInput);
 					System.out.print(": ");
 					pwOutput.write(scan.nextInt());
@@ -94,8 +102,8 @@ public class Client {
 					
 				}
 				case 2: {
-					System.out.print("File name: ");
-					uploadFile(scan.next());
+					System.out.println("yop");
+					uploadFile();
 					System.out.println("Uploading File...");
 					break;
 				}
@@ -155,26 +163,37 @@ public class Client {
 
 	}
 
-	public void uploadFile(String fileName) {
+	public void uploadFile() {
 		try {
+		
 			// get the file we want to send
+			JFileChooser jfc = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
+		
 
-			File file = new File("Library/" + fileName);
-			FileInputStream fileIn = new FileInputStream(file);
-			DataOutputStream output = new DataOutputStream(s.getOutputStream());
-			fileName = file.getName();
-			System.out.println("trying to send: " + fileName);
+			int returnValue = jfc.showOpenDialog(null);
 
-			// we send the file name
-			byte[] fileNameBytes = fileName.getBytes();
-			byte[] sendBytes = new byte[(int) file.length()];
-			fileIn.read(sendBytes);
+			if (returnValue == JFileChooser.APPROVE_OPTION) {
+				File selectedFile = jfc.getSelectedFile();
+				System.out.println(selectedFile.getAbsolutePath());
+			}
+			
+			File file = jfc.getSelectedFile();
+			try (FileInputStream fileIn = new FileInputStream(file)) {
+				fileName = file.getName();
+				System.out.println("trying to send: " + fileName);
 
-			output.writeInt(fileNameBytes.length);
-			output.write(fileNameBytes);
+				// we send the file name
+				byte[] fileNameBytes = fileName.getBytes();
+				byte[] sendBytes = new byte[(int) file.length()];
+				fileIn.read(sendBytes);
 
-			output.writeInt(sendBytes.length);
-			output.write(sendBytes);
+				out.writeInt(fileNameBytes.length);
+				out.write(fileNameBytes);
+
+				out.writeInt(sendBytes.length);
+				out.write(sendBytes);
+				System.out.println("flag1");
+			}
 
 		} catch (FileNotFoundException fnf) {
 			System.out.println("File not found");

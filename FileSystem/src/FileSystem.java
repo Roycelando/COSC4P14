@@ -46,11 +46,13 @@ public class FileSystem extends Thread {
 	public void run() {
 		try {
 			System.out.println("File system is running....");
+			int option;
+			int value = (int)brInput.read();
+			isStudent = value == 1 ? true : false;
+			System.out.println("value:" + value);
 			while (stillUsing) {
-				int value = (int)brInput.read();
-				isStudent = value == 1 ? true : false;
-				System.out.println("value:" + value);
-				int option = brInput.read();
+				
+				option = brInput.read();
 				System.out.println("option:" + option);
 				sendMenu(option);
 				
@@ -116,6 +118,7 @@ public class FileSystem extends Thread {
 				FileOutputStream fout = new FileOutputStream(new File(fileName));
 				fout.write(contentBytes);
 				fout.close();
+				System.out.println("File ready to use.....");
 			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
