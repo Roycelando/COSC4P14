@@ -18,39 +18,56 @@ import java.util.Scanner;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileSystemView;
 
+/**
+ * This class is used to Connect to the Server and FileSystem class.
+ * Professors can download and upload files to the FilesSystem class,
+ * While Students can only download files from the FileSystem class.
+ * 
+ * @author 
+ *
+ */
 public class Client {
-	int fileNameLength;
-	String fileName;
-	int contentLength;
-	int port;
-	byte[] contentBytes = null;
-	byte[] fileNameBytes = null;
-	public boolean isStudent = true;
-	Socket s;
-	DataInputStream input;
-	DataOutputStream out;
-	PrintWriter pwOutput;
-	BufferedReader brInput;
+	int fileNameLength; // will hold the byte length of a files name
+	String fileName; // will hold the name of a file
+	int contentLength; // will hold the byte length of a files content
+	int port; // will hold the port number of the server
+	byte[] contentBytes = null; // will hold the bytes of a files content
+	byte[] fileNameBytes = null; // will hold the bytes of a files name
+	public boolean isStudent = true; // is True if client is a student
+	Socket s; // will hold the socket of the server
+	DataInputStream input; // used to receive data from the FileSystem
+	DataOutputStream out; // used to send data to the FileSystem
+	PrintWriter pwOutput; // used to send data to the FileSystem
+	BufferedReader brInput; // used to receive data from the file system
 	JFileChooser fc;
 
+	/**
+	 * This constructor is use to make the Client object.
+	 *
+	 * @param port
+	 * @param isStudent
+	 * @throws InterruptedException
+	 **/
 	public Client(int port, Boolean isStudent) throws InterruptedException {
-		this.port = port;
-		this.isStudent = isStudent;
+		
+		this.port = port;  // initializes the port number
+		this.isStudent = isStudent; // initializes isStudent
 		System.out.println("[Client]: What's the IP of the server?\n[Client]: Type localhost for localhost, or the IP.");
-		System.out.print("\t:");
-		Scanner scan = new Scanner(System.in);
-		String ip = scan.next();
-		try (Socket s = new Socket(ip, port)) {
-			out = new DataOutputStream(s.getOutputStream());
-			input = new DataInputStream(s.getInputStream());
-			brInput = new BufferedReader(new InputStreamReader(s.getInputStream()));
-			pwOutput = new PrintWriter(s.getOutputStream(), true);
-			int value = isStudent == true ? 1 : 0;
-			pwOutput.write(value);
-			pwOutput.flush();
+		System.out.print("\tEnter: "); //
+		Scanner scan = new Scanner(System.in); // used to get user input
+		String ip = scan.next(); // get the IP address from user
+		
+		try (Socket s = new Socket(ip, port)) { // tires to connect to the socket
+			out = new DataOutputStream(s.getOutputStream()); // creates the DataOutputStream
+			input = new DataInputStream(s.getInputStream()); // creates the DataInputStream
+			brInput = new BufferedReader(new InputStreamReader(s.getInputStream())); // creates the Buffered Reader
+			pwOutput = new PrintWriter(s.getOutputStream(), true); // creates the Print Writer
+			int value = isStudent == true ? 1 : 0; // used to fetch the correct menu from the FileSystem
+			pwOutput.write(value); // sends the value to the FileSystem
+			pwOutput.flush(); // flushes the output stream
 			while (true) {
 
-				getMenu(brInput);
+				getMenu(); // gets the FileSystem menu from the FileSytem.
 			}
 		} catch (IOException e) {
 			System.out.println("[Client]: There seems to be a problem connecting...");
@@ -58,63 +75,75 @@ public class Client {
 
 	}
 
-	public void getMenu(BufferedReader brInput) throws InterruptedException {
+	/**
+	 * This method is used to interact with the FileSystem. 
+	 * Professors can Download and Upload files.
+	 * Students can only download files from the FileSystem.
+	 * 
+	 * @param brInput
+	 * @throws InterruptedException
+	 */
+	public void getMenu() throws InterruptedException {
 		try {
-			Scanner scan = new Scanner(System.in);
-			String msg;
-			if (isStudent) {
+			Scanner scan = new Scanner(System.in); // used to get user input
+			String msg; // used to store FileSystem messages
+			
+			if (isStudent) { // if the Client is a Student
 
-				int option = 0;
+				int option = 0; // key for the switch statement
+				
+				while (option != 1 && option != 2) {  // ensures input is valid
+					System.out.println("1.Download a file 2. Exit");
+					System.out.print("\tEnter: ");
+					option = scan.nextInt(); // reads users input
+					pwOutput.write(option); // sends users input to the FileSystem
+					pwOutput.flush(); // flushes the stream
+				}
+				
+				switch (option) { 
+				case 1: { // download a file
 
-				System.out.println("1.Download a file 2. Exit");
-				option = scan.nextInt();
-				pwOutput.write(option);
-				pwOutput.flush();
-
-				switch (option) {
-				case 1: {
-
-					downloadList(brInput);
-					System.out.print(": ");
-					pwOutput.write(scan.nextInt());
-					pwOutput.flush();
-					downloadFile(input);
+					downloadList(); // gets the list of books from the FileSystem
+					System.out.print("\tSelect book #: ");
+					pwOutput.write(scan.nextInt()); // gets and sends the users input to the FileSystem
+					pwOutput.flush(); // flushes the stream
+					downloadFile(); // downloads the selected book
 					break;
 				}
-				case 2: {
-					System.out.println("Bye! Have a nice day...");
-					System.exit(0);
+				case 2: { // exits the program
+					System.out.println("[Client]: Bye! Have a nice day...");
+					System.exit(0); // 
 				}
 				}
 
-			} else {
+			} else { // if the client is a professor
 				int option = 0;
-				while (option != 1 && option != 2 && option != 3) {
-
+				while (option != 1 && option != 2 && option != 3) { // ensures input is valid
 					System.out.println("1.Download a file 2.Upload a file 3. Exit");
-					option = scan.nextInt();
-					pwOutput.write(option);
-					pwOutput.flush();
+					System.out.print("\tEnter: ");
+					option = scan.nextInt(); // gets the users input
+					pwOutput.write(option); // sends the input to the FileSystem
+					pwOutput.flush(); // flushes the stream
 				}
 
 				switch (option) {
-				case 1: {
-					downloadList(brInput);
-					System.out.print("\t: ");
-					pwOutput.write(scan.nextInt());
-					pwOutput.flush();
+				case 1: { // download a file
+					downloadList(); // gets the list of books
+					System.out.print("\t Select a Book #: ");
+					pwOutput.write(scan.nextInt()); // gets ands sends the users input to the FileSystem
+					pwOutput.flush(); // flushes the stream
 					System.out.println("[Client]: Downloading file...");
-					downloadFile(input);
+					downloadFile(); // downloads the file
 					System.out.println("[Client]: Download complete...");
 					break;
 				}
-				case 2: {
+				case 2: { // upload a file
 					System.out.println("[Client]: Uploading File...");
-					uploadFile();
+					uploadFile(); // uploads the file
 					System.out.println("[Clinet]: Done uploading File...");
 					break;
 				}
-				case 3: {
+				case 3: { // exits the program
 					System.out.println("[Client]: Bye! Have a nice day...");
 					System.exit(0);
 				}
@@ -122,20 +151,25 @@ public class Client {
 
 			}
 		} catch (InputMismatchException e) {
-			System.out.println("Give me a the correct inbut");
+			System.out.println("Give me a the correct input");
 		}
 	}
 
-	public void downloadList(BufferedReader brInput) {
+	/**
+	 * This method is used to get a list available books 
+	 * to download from the fileSystem.
+	 * 
+	 * @param brInput
+	 */
+	public void downloadList() {
 		String msg;
 		try {
-			int length = new Integer(brInput.read());
-			System.out.println(length);
-			msg = new String(brInput.readLine());
-			System.out.println(msg);
+			int length = new Integer(brInput.read()); // gets the number of books available
+			msg = new String(brInput.readLine()); // gets message from FileSystem
+			System.out.println(msg); // prints the message
 
-			for (int i = 0; i < length; i++) {
-				msg = new String(brInput.readLine());
+			for (int i = 0; i < length; i++) { // list the names of all the books available
+				msg = new String(brInput.readLine()); 
 				System.out.println(i + "." + msg);
 			}
 			msg = "";
@@ -147,24 +181,29 @@ public class Client {
 
 	}
 
-	public void downloadFile(DataInputStream input) {
+	/**
+	 * The Method is used to download a file from the FileSystem.
+	 * 
+	 * @param input
+	 */
+	public void downloadFile() {
 		try {
-			fileNameLength = input.readInt();
+			fileNameLength = input.readInt(); // length of the file name
 
-			if (fileNameLength > 0) {
+			if (fileNameLength > 0) { // check if there's a file name
 				fileNameBytes = new byte[fileNameLength];
-				input.readFully(fileNameBytes, 0, fileNameBytes.length);
-				fileName = new String(fileNameBytes);
+				input.readFully(fileNameBytes, 0, fileNameBytes.length); // reads all the bytes of the file 
+				fileName = new String(fileNameBytes); // Converts the bits to a string
 
-				contentLength = input.readInt();
+				contentLength = input.readInt(); // get the length of the contents bytes
 
-				if (contentLength > 0) {
+				if (contentLength > 0) { // if there's content
 					contentBytes = new byte[contentLength];
-					input.readFully(contentBytes, 0, contentBytes.length);
+					input.readFully(contentBytes, 0, contentBytes.length); // reads all the bytes
 				}
-				FileOutputStream fout = new FileOutputStream(new File(fileName));
-				fout.write(contentBytes);
-				fout.close();
+				FileOutputStream fout = new FileOutputStream(new File("Downloads/"+fileName)); // creates a new file in the directory
+				fout.write(contentBytes);  // Stores the downloaded content onto the file.
+				fout.close(); // closes the stream to the file
 			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
@@ -172,38 +211,41 @@ public class Client {
 		}
 	}
 
+	/**
+	 * This method is used to upload files to the FileSystem
+	 * 
+	 */
 	public void uploadFile() {
 		try {
 
 			// get the file we want to send
 			JFileChooser jfc = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
 
-			int returnValue = jfc.showOpenDialog(null);
+			int returnValue = jfc.showOpenDialog(null); // get the return value
 
-			if (returnValue == JFileChooser.APPROVE_OPTION) {
-				File selectedFile = jfc.getSelectedFile();
-				System.out.println(selectedFile.getAbsolutePath());
+			if (returnValue == JFileChooser.APPROVE_OPTION) { // checks if the file chooser has been approved
+				File selectedFile = jfc.getSelectedFile(); // gets the selected file
 			}
 
-			File file = jfc.getSelectedFile();
-			try (FileInputStream fileIn = new FileInputStream(file)) {
-				fileName = file.getName();
+			File file = jfc.getSelectedFile(); // stores the file path
+			try (FileInputStream fileIn = new FileInputStream(file)) { // creates a stream to the file
+				fileName = file.getName(); // gets the name of the file
 				System.out.println("[Client]: Sending: " + fileName + " ...");
 
 				// we send the file name
-				byte[] fileNameBytes = fileName.getBytes();
-				byte[] sendBytes = new byte[(int) file.length()];
-				fileIn.read(sendBytes);
+				byte[] fileNameBytes = fileName.getBytes(); // stores the bytes of the file name
+				byte[] sendBytes = new byte[(int) file.length()]; // will hold files content bytes
+				fileIn.read(sendBytes); // reads the content bytes into sendBytes
 
-				out.writeInt(fileNameBytes.length);
-				out.write(fileNameBytes);
+				out.writeInt(fileNameBytes.length); // sends file name length to FileSystem
+				out.write(fileNameBytes); // sends the file name bytes to FileSystem
 
-				out.writeInt(sendBytes.length);
-				out.write(sendBytes);
+				out.writeInt(sendBytes.length); // sends the content byte length to the FileSystem
+				out.write(sendBytes); // sends the file's content bytes to the FileSystem
 
 			}
 
-		} catch (FileNotFoundException fnf) {
+		} catch (FileNotFoundException fnf) { 
 			System.out.println("File not found");
 		} catch (IOException e) {
 			System.out.println("IO exception");
@@ -212,22 +254,34 @@ public class Client {
 
 	}
 
-	public boolean getIsStudent() {
-		return isStudent == true ? true : false;
-	}
 
+	/**
+	 * The main method runs when the program is executed.
+	 * 
+	 * If you are using a terminal you must type the port number of the server(4000) and 0 if you
+	 * are a professor and 1 if you are a student. e.g professor: "java Client 4000 0",
+	 * student: "java Client 4000 1"
+	 * 
+	 * Another way to run the program is to just type "java Client" and the client will default the 
+	 * port number to 4000 and the client will ask you if you are a student or a teacher.
+	 * 
+	 * @param args
+	 * @throws UnknownHostException
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
 	public static void main(String[] args) throws UnknownHostException, IOException, InterruptedException {
 		int port = 0;
 		try {
 			if (args.length < 1) {
 				port = 4000;
-				System.out.println("Type 0 if you are a Professor and 1 if you are a Student. ");
-				System.out.print("-> ");
+				System.out.println("0. if Professor | 1. if Student. ");
+				System.out.print("\tEnter: ");
 				Scanner scan = new Scanner(System.in);
 				int option = scan.nextInt();
 				if (option == 0) {
 
-					System.out.println("Welcome professor.");
+					System.out.println("Welcome Professor.");
 					new Client(port, false);
 				} else if (option == 1) {
 					System.out.println("Welcome you neophyte.");
@@ -265,8 +319,5 @@ public class Client {
 		}
 	}
 
-	public void whoAreYou(String option) {
-
-	}
 
 }
